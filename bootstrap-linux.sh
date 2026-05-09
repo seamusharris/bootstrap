@@ -146,12 +146,30 @@ if ! command -v eza &>/dev/null; then
   }
 fi
 
-# tree-sitter CLI (for neovim treesitter parsers)
+# tree-sitter CLI — install the static prebuilt binary from GitHub releases.
+# (npm's tree-sitter-cli is dynamically linked against a recent glibc, which
+# breaks on Rocky 9 — its glibc is older than the build host's.)
 if ! command -v tree-sitter &>/dev/null; then
-  info "Installing tree-sitter CLI..."
-  sudo npm install -g tree-sitter-cli 2>/dev/null || {
-    warn "npm not found — treesitter parsers may need manual install in neovim"
-  }
+  info "Installing tree-sitter CLI (static binary)..."
+  arch=$(uname -m)
+  case "$arch" in
+    x86_64)  ts_arch="x64"   ;;
+    aarch64|arm64) ts_arch="arm64" ;;
+    *) warn "Unknown arch '$arch' — skipping tree-sitter CLI"; ts_arch="" ;;
+  esac
+  if [ -n "$ts_arch" ]; then
+    ts_version=$(curl -fsSL https://api.github.com/repos/tree-sitter/tree-sitter/releases/latest \
+      | grep '"tag_name"' | cut -d '"' -f 4)
+    if [ -n "$ts_version" ]; then
+      curl -fsSL "https://github.com/tree-sitter/tree-sitter/releases/download/${ts_version}/tree-sitter-linux-${ts_arch}.gz" \
+        | gunzip > /tmp/tree-sitter
+      chmod +x /tmp/tree-sitter
+      sudo mv /tmp/tree-sitter /usr/local/bin/tree-sitter
+      info "Installed tree-sitter $ts_version"
+    else
+      warn "Could not resolve tree-sitter latest release — skipping"
+    fi
+  fi
 fi
 
 # -------------------------------------------------------------------------
