@@ -43,7 +43,7 @@ installing anything, so it fails fast if agent forwarding isn't working.
 4. **Neovim**: installs the official AppImage extracted to `/opt/nvim`,
    symlinked at `/usr/local/bin/nvim` (Rocky's dnf nvim is too old for modern
    plugins). Skipped if existing nvim is already ≥0.11.
-5. **Tools**: starship, zoxide, eza, tree-sitter-cli.
+5. **Tools**: starship, zoxide, eza.
 6. **chezmoi**: installs and runs `chezmoi init --apply --ssh seamusharris`,
    pulling the private dotfiles repo via your forwarded SSH key.
 7. **Shell**: changes default shell to zsh.
@@ -54,3 +54,18 @@ installing anything, so it fails fast if agent forwarding isn't working.
 - Should work on any RHEL-family distro with dnf
 
 If you run it elsewhere and it breaks, open an issue or PR.
+
+## TODO when migrating to Rocky 10+ / newer glibc
+
+- **Re-enable `nvim-treesitter` on Linux**: it's currently gated off via a
+  chezmoi conditional in the dotfiles repo (`init.lua.tmpl`). The blocker is
+  that the upstream `tree-sitter` CLI prebuilt binary requires glibc ≥2.39
+  (Rocky 9 ships 2.34). On Rocky 10+ the prebuilt should just work — install
+  it (e.g. `npm install -g tree-sitter-cli` or download from the
+  tree-sitter releases page), then drop the `{{ if ne .chezmoi.os "linux" }}`
+  wrapper around the nvim-treesitter plugin spec.
+- **Reconsider `gcc`/`make` in this script**: they were added so the legacy
+  nvim-treesitter compile path could work. With treesitter disabled on
+  Linux, neither is currently used for anything. They can be removed if you
+  want a leaner server, or kept for general-purpose admin work. When
+  treesitter is re-enabled with the CLI, they're no longer needed.
